@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { BookOpen, Send, Share2, RefreshCw, Sparkles, Feather, User, Bot, Crown, HeartCrack, Gem, Flower, X } from 'lucide-react';
 
 // --- 設定 ---
-const apiKey = "AIzaSyDTHwr1ijGcXLOSMxDERpotFgjFv56NXd0"; // 実行環境で自動注入されます
+const apiKey = "AIzaSyDTHwr1ijGcXLOSMxDERpotFgjFv56NXd0" ;
 
 // 10ターンのビートシート（悪役令嬢編）
 const BEAT_SHEET = [
@@ -679,3 +679,4 @@ export default function VillainessTRPG_v2() {
     </>
   );
 }
+
