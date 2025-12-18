@@ -44,7 +44,8 @@ async function callGeminiGM(history, archetype, currentTurn) {
   }));
 
   try {
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+    // ここを「v1」にして、確実にモデルを指定します
+const response = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -178,6 +179,7 @@ function VillainessTRPG() {
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(<VillainessTRPG />);
+
 
 
 
