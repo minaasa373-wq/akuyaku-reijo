@@ -2,7 +2,8 @@ const { useState, useEffect, useRef } = React;
 
 // --- 設定 ---
 // ここにあなたのAPIキーを貼り付けてください
-const apiKey = "AIzaSyDTHwr1ijGcXLOSMxDERpotFgjFv56NXd0"; 
+// 理想的な形（スペースなし、引用符でピッタリ囲む）
+const apiKey = "AIzaSyDTHwr1ijGcXLOSMxDERpotFgjFv56NXd0";
 
 const BEAT_SHEET = [
   { turn: 1, theme: "断罪のファンファーレ", instruction: "舞踏会の最中、音楽が止まる。王子が婚約破棄を宣言する。衆人環視の恥辱。" },
@@ -192,6 +193,7 @@ function VillainessTRPG() {
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(<VillainessTRPG />);
+
 
 
 
