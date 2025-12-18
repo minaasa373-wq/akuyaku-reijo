@@ -26,48 +26,57 @@ const ARCHETYPES = [
 
 async function callGeminiGM(history, archetype, currentTurn) {
   const currentBeat = BEAT_SHEET[currentTurn - 1];
-  const systemPrompt = `あなたは悪役令嬢の追放劇を司るGMです。中世ヨーロッパ風の優雅で毒のある文体で描写してください。必ずJSONで返して。{"narrative": "...", "suggested_actions": ["A", "B", "C"]}`;
-  const log = history.map(h => `${h.role}: ${h.text}`).join("\n");
   
-  try {
-    // モデル名を最新の 'gemini-1.5-flash' に固定して呼び出します
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: log + "\n次の展開をJSON形式で教えてください。" }] }],
-        systemInstruction: { parts: [{ text: systemPrompt }] },
-        generationConfig: { responseMimeType: "application/json" }
-      })
-    });
+  // 指示書をより分かりやすく整理しました
+  const systemPrompt = `あなたは悪役令嬢TRPGのGMです。
+中世ヨーロッパ風の優雅で毒のある文体で、以下のテーマに沿って情景を描写してください。
+現在のテーマ: ${currentBeat.theme}
+指示: ${currentBeat.instruction}
+プレイヤーの性格: ${archetype.name}
 
-    if (!response.ok) {
-      // エラーが起きた場合、その理由（403など）を画面に出します
-      const errorData = await response.json();
-      console.error("Gemini Error:", errorData);
-      return { narrative: `Gemini様がお疲れのようです（エラー: ${response.status}）。APIキーが正しいか、設定を確認してくださいまし。`, suggested_actions: ["再試行ですわ"] };
-    }
+必ず以下のJSON形式で返答してください。
+{"narrative": "物語の描写", "suggested_actions": ["選択肢1", "選択肢2", "選択肢3"]}`;
 
-    const data = await response.json();
-    return JSON.parse(data.candidates[0].content.parts[0].text);
-  } catch (e) {
-    console.error("Fetch Error:", e);
-    return { narrative: "通信の魔法が途切れましたわ...。もう一度お試しになって？", suggested_actions: ["魔力を練り直す"] };
-  }
-}
+  // 400エラー対策：履歴の形式をGeminiの厳格なルールに合わせます
+  const formattedContents = history.map(h => ({
+    role: h.role === 'user' ? 'user' : 'model', // 'model'か'user'のみを許可
+    parts: [{ text: h.text }]
+  }));
 
-async function analyzePersonality(history) {
-  const log = history.map(h => h.text).join("\n");
-  const systemPrompt = `悪役令嬢診断をJSONで。{"rank": "...", "title": "...", "stats": {"pride":5, "intelligence":5, "madness":5, "charisma":5, "survival":5}, "comment": "..."}`;
   try {
     const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ contents: [{ parts: [{ text: log }] }], systemInstruction: { parts: [{ text: systemPrompt }] }, generationConfig: { responseMimeType: "application/json" } })
+      body: JSON.stringify({
+        contents: formattedContents,
+        systemInstruction: {
+          parts: [{ text: systemPrompt }]
+        },
+        generationConfig: {
+          responseMimeType: "application/json"
+        }
+      })
     });
+
+    if (!response.ok) {
+      const errorDetail = await response.json();
+      console.error("Gemini Error Detail:", errorDetail);
+      return { 
+        narrative: `Gemini様との通信でエラー(${response.status})が起きましたわ。設定をもう一度見直しましょう。`, 
+        suggested_actions: ["再試行してみる"] 
+      };
+    }
+
     const data = await response.json();
-    return JSON.parse(data.candidates[0].content.parts[0].text);
-  } catch (e) { return null; }
+    const resultText = data.candidates[0].content.parts[0].text;
+    return JSON.parse(resultText);
+  } catch (e) {
+    console.error("Parse Error:", e);
+    return { 
+      narrative: "物語の糸が絡まってしまいましたわ...もう一度お試しになって？", 
+      suggested_actions: ["運命をやり直す"] 
+    };
+  }
 }
 
 function VillainessTRPG() {
@@ -169,5 +178,6 @@ function VillainessTRPG() {
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(<VillainessTRPG />);
+
 
 
