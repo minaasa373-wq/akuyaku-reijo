@@ -2,8 +2,7 @@ const { useState, useEffect, useRef } = React;
 
 // --- 設定 ---
 // ここにあなたのAPIキーを貼り付けてください
-// 理想的な形（スペースなし、引用符でピッタリ囲む）
-const apiKey = "AIzaSyDTHwr1ijGcXLOSMxDERpotFgjFv56NXd0";
+const apiKey = "AIzaSyDTHwr1ijGcXLOSMxDERpotFgjFv56NXd0"; 
 
 const BEAT_SHEET = [
   { turn: 1, theme: "断罪のファンファーレ", instruction: "舞踏会の最中、音楽が止まる。王子が婚約破棄を宣言する。衆人環視の恥辱。" },
@@ -27,57 +26,17 @@ const ARCHETYPES = [
 
 async function callGeminiGM(history, archetype, currentTurn) {
   const currentBeat = BEAT_SHEET[currentTurn - 1];
-  
-  // 指示書をより分かりやすく整理しました
-  const systemPrompt = `あなたは悪役令嬢TRPGのGMです。
-中世ヨーロッパ風の優雅で毒のある文体で、以下のテーマに沿って情景を描写してください。
-現在のテーマ: ${currentBeat.theme}
-指示: ${currentBeat.instruction}
-プレイヤーの性格: ${archetype.name}
-
-必ず以下のJSON形式で返答してください。
-{"narrative": "物語の描写", "suggested_actions": ["選択肢1", "選択肢2", "選択肢3"]}`;
-
-  // 400エラー対策：履歴の形式をGeminiの厳格なルールに合わせます
-  const formattedContents = history.map(h => ({
-    role: h.role === 'user' ? 'user' : 'model', // 'model'か'user'のみを許可
-    parts: [{ text: h.text }]
-  }));
-
+  const systemPrompt = `あなたは悪役令嬢の追放劇を司るGMです。中世ヨーロッパ風の優雅で毒のある文体で描写してください。必ずJSONで返して。{"narrative": "...", "suggested_actions": ["A", "B", "C"]}`;
+  const log = history.map(h => `${h.role}: ${h.text}`).join("\n");
   try {
     const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: formattedContents,
-        systemInstruction: {
-          parts: [{ text: systemPrompt }]
-        },
-        generationConfig: {
-          responseMimeType: "application/json"
-        }
-      })
+      body: JSON.stringify({ contents: [{ parts: [{ text: log + "\n次の展開をJSONで。" }] }], systemInstruction: { parts: [{ text: systemPrompt }] }, generationConfig: { responseMimeType: "application/json" } })
     });
-
-    if (!response.ok) {
-      const errorDetail = await response.json();
-      console.error("Gemini Error Detail:", errorDetail);
-      return { 
-        narrative: `Gemini様との通信でエラー(${response.status})が起きましたわ。設定をもう一度見直しましょう。`, 
-        suggested_actions: ["再試行してみる"] 
-      };
-    }
-
     const data = await response.json();
-    const resultText = data.candidates[0].content.parts[0].text;
-    return JSON.parse(resultText);
-  } catch (e) {
-    console.error("Parse Error:", e);
-    return { 
-      narrative: "物語の糸が絡まってしまいましたわ...もう一度お試しになって？", 
-      suggested_actions: ["運命をやり直す"] 
-    };
-  }
+    return JSON.parse(data.candidates[0].content.parts[0].text);
+  } catch (e) { return { narrative: "通信エラーですわ...", suggested_actions: ["やり直す"] }; }
 }
 
 async function analyzePersonality(history) {
@@ -193,9 +152,3 @@ function VillainessTRPG() {
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(<VillainessTRPG />);
-
-
-
-
-
-
